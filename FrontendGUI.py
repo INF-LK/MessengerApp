@@ -26,10 +26,16 @@ class FrontendGUI(Tk):
         contact.pack()
         button = tk.Button(text="Back", command=self.contactList)
         button.pack()
+        entry = tk.Entry()
+        entry.bind("<Return>", lambda event: self.sendMessage(entry.get()))
+        entry.pack()
 
     def backToContacts(self):
         pass
         
+    def sendMessage(self, message):
+        print(f"Sending message: {message}")
+   
     def run(self):
         self.mainloop()
         
