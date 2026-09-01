@@ -1,4 +1,6 @@
 from tkinter import Tk
+import tkinter as tk
+
 
 class FrontendGUI(Tk):
 
@@ -6,21 +8,28 @@ class FrontendGUI(Tk):
         super().__init__()
         self.title("Infcord")
         self.geometry("1020x1019")
-        self.mainloop()
         # Additional GUI setup can be done here
     
     def contactList(self, contacts: list):
         for i in self.winfo_children():
             i.destroy()
-        for i in contacts:
-            self.button(text=i, command=lambda i=i: self.openChat(i)).pack()
-
+        for g in contacts:
+            print(g)
+            button = tk.Button(self, text=g, command=lambda g=g:self.openChat(g))
+            button.pack()
+        
+    
+    
     def openChat(self, contact):
         for i in self.winfo_children():
             i.destroy()
-        self.label(text=f"Chat with {contact}").pack()
-        self.button(text="Back", command=self.backToContacts).pack()
-        self.update()
+        contact = tk.Label(text=f"Chat with {contact}")
+        contact.pack()
+        button = tk.Button(text="Back", command=self.contactList)
+        button.pack()
+
+    def backToContacts(self):
+        pass
         
     def run(self):
         self.mainloop()
