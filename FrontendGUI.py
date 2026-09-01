@@ -19,7 +19,6 @@ class FrontendGUI(Tk):
             button.pack()
         
     
-    
     def openChat(self, contact):
         for i in self.winfo_children():
             i.destroy()
