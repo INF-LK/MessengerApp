@@ -14,7 +14,6 @@ class FrontendGUI(Tk):
         for i in self.winfo_children():
             i.destroy()
         for g in contacts:
-            print(g)
             button = tk.Button(self, text=g, command=lambda g=g:self.openChat(g))
             button.pack()
         
@@ -22,16 +21,22 @@ class FrontendGUI(Tk):
     def openChat(self, contact):
         for i in self.winfo_children():
             i.destroy()
-        contact = tk.Label(text=f"Chat with {contact}")
-        contact.pack()
-        button = tk.Button(text="Back", command=self.contactList)
-        button.pack()
+        topBar = tk.Frame(self, height=50, bg="lightgray")
+        topBar.pack(fill=tk.X, side=tk.TOP)
+        contact = tk.Label(topBar, text=f"Chat with {contact}")
+        contact.pack(side=tk.TOP)
+        button = tk.Button(topBar, text="Back", command=lambda: self.contactList(self.getContacts()))
+        button.pack(side=tk.TOP, anchor="w")
         entry = tk.Entry()
         entry.bind("<Return>", lambda event: self.sendMessage(entry.get()))
-        entry.pack()
+        entry.pack(side=tk.BOTTOM, fill=tk.X)
 
     def backToContacts(self):
         pass
+    
+    def getContacts(self):
+        # Placeholder for getting contacts from the backend
+        return ["Alice", "Bob", "Charlie"]
         
     def sendMessage(self, message):
         print(f"Sending message: {message}")
