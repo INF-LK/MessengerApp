@@ -15,7 +15,7 @@ def setup_db():
          nutzer TEXT NOT NULL,
          nachricht TEXT NOT NULL)'''
     )
-        cursor.execute(
+    cursor.execute(
            '''CREATE TABLE IF NOT EXISTS nutzer
            (id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE)'''
