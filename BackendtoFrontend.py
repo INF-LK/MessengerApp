@@ -1,5 +1,17 @@
 import socket
 import threading
+import json
+
+from Datenbank import (
+    anmelden,
+    auslesen_nachrichten_von_nutzer,
+    benutzer_zu_token,
+    chats_von_nutzer,
+    registrieren,
+    speichern_nachricht,
+    token_erneuern,
+    setup_db,
+)
 
 HOST = "0.0.0.0"
 PORT = 5000
@@ -14,6 +26,7 @@ class BackendtoFrontend:
         self.clients = {}
         self.lock = threading.Lock()
         self.server = None
+        setup_db()
 
     def start(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -49,17 +62,20 @@ class BackendtoFrontend:
 
     def handle_client(self, client, address):
         username = None
+        token = None
         try:
             reader = client.makefile("r", encoding="utf-8")
-            client.sendall(b"WELCOME Please connect with CONNECT <username>\n")
+            client.sendall(b"WELCOME LOGIN or REGISTER, then CONNECT <token>\n")
             for raw_line in reader:
                 line = raw_line.rstrip("\r\n")
                 if not line:
                     continue
-                response = self.choose_method(line, username, client)
+                response = self.choose_method(line, username, client, token)
                 client.sendall((response + "\n").encode("utf-8"))
                 if response.startswith("CONNECTED "):
-                    username = response.split(maxsplit=1)[1]
+                    fields = response.split()
+                    username = fields[1]
+                    token = fields[2]
         except (ConnectionError, OSError, UnicodeError):
             pass
         finally:
@@ -69,38 +85,68 @@ class BackendtoFrontend:
                         del self.clients[username]
             client.close()
 
-    def choose_method(self, line, sender=None, client=None):
-        parts = line.split(maxsplit=2)
+    def choose_method(self, line, username=None, client=None, active_token=None):
+        parts = line.split(maxsplit=3)
         if not parts:
             return "ERROR empty command"
         method = parts[0]
 
-        if method == "CONNECT":
+        if method in ("CONNECT", "RECONNECT"):
             if len(parts) != 2 or not parts[1].strip():
-                return "ERROR CONNECT requires a username"
-            username = parts[1].strip()
+                return f"ERROR {method} requires a token"
             if client is None:
                 return "ERROR connection is required"
+            connected_username = benutzer_zu_token(parts[1])
+            if connected_username is None:
+                return "ERROR invalid or expired token"
             with self.lock:
-                if username in self.clients:
+                if connected_username in self.clients and self.clients[connected_username] is not client:
                     return "ERROR username already connected"
-                self.clients[username] = client
-            return f"CONNECTED {username}"
+            new_token = token_erneuern(parts[1])
+            with self.lock:
+                self.clients[connected_username] = client
+            return f"CONNECTED {connected_username} {new_token}"
+
+        if method == "LOGIN":
+            if len(parts) != 3 or not parts[1] or not parts[2]:
+                return "ERROR LOGIN requires username and password"
+            new_token = anmelden(parts[1], parts[2])
+            return f"TOKEN {new_token}" if new_token else "ERROR invalid username or password"
+
+        if method == "REGISTER":
+            if len(parts) != 3 or not parts[1] or not parts[2]:
+                return "ERROR REGISTER requires username and password"
+            new_token = registrieren(parts[1], parts[2])
+            return f"TOKEN {new_token}" if new_token else "ERROR username already exists"
+
+        if method in ("CHATS", "MESSAGES"):
+            if username is None:
+                return f"ERROR connect before {method.lower()}"
+            if method == "CHATS":
+                return f"CHATS {json.dumps(chats_von_nutzer(username), ensure_ascii=True)}"
+            messages = {}
+            for message in auslesen_nachrichten_von_nutzer(username):
+                chat = message["empfaenger"] if message["sender"] == username else message["sender"]
+                messages.setdefault(chat, []).append(message)
+            return f"MESSAGES {json.dumps(messages, ensure_ascii=True)}"
 
         if method == "SEND_MESSAGE":
-            if sender is None:
+            if username is None:
                 return "ERROR connect before sending"
-            if len(parts) != 3 or not parts[1] or not parts[2]:
-                return "ERROR SEND_MESSAGE requires recipient and message"
-            return self.send_message(parts[1], parts[2], sender)
+            if len(parts) != 4 or not parts[1] or not parts[2] or not parts[3]:
+                return "ERROR SEND_MESSAGE requires token, recipient and message"
+            if parts[1] != active_token or benutzer_zu_token(parts[1]) != username:
+                return "ERROR invalid token"
+            return self.send_message(parts[2], parts[3], username)
 
         return "ERROR unknown method"
 
     def send_message(self, recipient, message, sender):
+        speichern_nachricht(sender, recipient, message)
         with self.lock:
             client = self.clients.get(recipient)
         if client is None:
-            return "ERROR recipient not connected"
+            return "SENT"
         try:
             client.sendall(f"RECEIVE_MESSAGE {sender} {message}\n".encode("utf-8"))
         except (ConnectionError, OSError):
