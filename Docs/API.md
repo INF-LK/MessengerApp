@@ -25,7 +25,7 @@
 ## Befehle
 
 - SEND_MESSAGE [Token] [Empfänger] [Nachricht] -> Frontend schickt Nachricht an Backend, authorisierung über Token
-- RECEIVE_MESSAGE [Token] [Sender] [Nachricht] -> Backend schickt Nachricht an Frontend, authorisierung über Token
+- RECEIVE_MESSAGE [Sender] [Nachricht] -> Backend schickt Nachricht an Frontend, authorisierung über Token
 
 # Löschfristen
 
