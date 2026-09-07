@@ -72,5 +72,11 @@ def datenbank_reset():
 
 
 setup_db()
-speichern_nutzer("Max")
+speichern_nutzer("Alice")
+speichern_nutzer("Bob")
+speichern_nachricht("Alice", "Hallo, wie geht's?")
+speichern_nachricht("Bob", "Mir geht's gut, danke!")
+
 print(auslesen_nutzer())
+print(auslesen_nachrichten())
+datenbank_reset()
