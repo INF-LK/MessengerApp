@@ -110,6 +110,7 @@ def auslesen_nutzer():
 def datenbank_reset():
     conn = _connection()
     cursor = conn.cursor()
+    cursor.execute("DROP TABLE IF EXISTS tokens")
     cursor.execute("DROP TABLE IF EXISTS nachrichten")
     cursor.execute("DROP TABLE IF EXISTS nutzer")
     conn.commit()
