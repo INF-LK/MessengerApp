@@ -14,6 +14,7 @@ class MessengerClient:
 		self.socket = None
 		self.reader = None
 		self.running = False
+		self.messageList = []  # List to store received messages
 
 	def connect(self):
 		self.socket = socket.create_connection((self.host, self.port))
@@ -42,6 +43,10 @@ class MessengerClient:
 				if line:
 					print(f"\n{line}")
 					print("> ", end="", flush=True)
+
+					lineList = line.split(" ")
+					if lineList[0] == "RECEIVE_MESSAGE" and len(lineList) >= 3:
+						self.messageList.append([lineList[1], True, "foreign", " ".join(lineList[2:])])  # Append the message to the list
 		except (ConnectionError, OSError, UnicodeError):
 			if self.running:
 				print("\nVerbindung zum Server verloren.")

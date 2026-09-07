@@ -1,6 +1,7 @@
 from tkinter import Tk
 import tkinter as tk
-
+import FrontendToBackend
+import threading
 
 class FrontendGUI(Tk):
 
@@ -10,8 +11,43 @@ class FrontendGUI(Tk):
         self.title("Infcord")
         self.geometry("1020x1019")
         self.resizable(False, False)
-        self.configure(bg="#44576D")
+        self.colorscheme = "frosted"
+        self.setColorscheme(self.colorscheme)
+        self.configure(bg=self.windowColor)
+        self.username = "Bob"
+        #test feature, put into login function later:
+        self.initializeBackend(self.username)
+        #self.updateLoop()  # Start the update loop for receiving messages
 
+
+    def setColorscheme(self, scheme):
+        self.colorscheme = scheme
+        schemes = ["darkmode","#000000","#000000","#000000","#000000","#000000","#000000",
+           "lightmode","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff",
+           "frosted","#29353c","#44576d","#768a96","#aac7d8","#dfebf6","#e6e6e6",
+           "trans","#1fa6de","#df859a","#cbb3f7","#55cdfc","#f5a9b8","#ffffff",
+           "pride", "e"
+           ]
+        help = schemes.index(scheme)
+        if scheme in schemes:
+            self.windowColor = schemes[help+1]
+            self.buttonColor = schemes[help+3]
+            self.entryColor = schemes[help+3]
+            self.labelColor = schemes[help+3]
+            self.buttonHoverColor = schemes[help+2]
+            self.topBarColor = schemes[help+4]
+            self.foreignBubbleColor = schemes[help+5]
+            self.ownBubbleColor = schemes[help+6]
+        pass
+    
+    
+    
+    def initializeBackend(self, username):
+        """
+        Initializes the backend connection with the given username.
+        """
+        self.backend = FrontendToBackend.MessengerClient(username)
+        self.backend.connect()    
         
     def contactList(self, contacts: list):
         """
@@ -74,9 +110,8 @@ class FrontendGUI(Tk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
         
-
-        for i in self.getChatLog(contact):
-            self.chatBubble(bubbleFrame, i)
+        #
+        self.buildChatBubbles(bubbleFrame, self.getChatLog(contact))
 
         # text field for sending chat messages
         bottomBar = tk.Frame(self, height=100, bg="#29353C")
@@ -98,6 +133,15 @@ class FrontendGUI(Tk):
         bubble.pack(pady=5, padx=10, anchor="w" if sender == "foreign" else "e")
         label = tk.Label(bubble, text=msg, bg="#DFEBF6",fg="black", wraplength=400)
         label.pack(padx=10, pady=5)
+    
+    
+    def buildChatBubbles(self, bubbleFrame, messages: list):
+        """
+        Builds chat bubbles for a list of messages.
+        messages: [[unread:bool, sender: str (mine/foreign), message: str], ...]
+        """
+        for i in messages:
+            self.chatBubble(bubbleFrame, i) 
         
         
     def getContacts(self):
@@ -111,14 +155,44 @@ class FrontendGUI(Tk):
         return [[0, "mine", "Hello!"], [0, "foreign", "Hi there!"], [0, "mine", "How are you?"], [1, "foreign", "I'm good, thanks!"]]
     
     
+    def updateChatLog(self, contact, message):
+        #placeholder for updating chat log in backend
+        print(f"Updating chat log for {contact} with message: {message}")
+        for i in self.backend.messageList:
+            if i[0] == contact:
+                if i[1] == True:  # If the message is unread
+                    newChatLog = self.getChatLog(contact).append(i[1:])
+                    i[1] = False  # Mark the message as read
+        
+        return newChatLog
+
+    
+    def updateLoop(self):
+        """
+        Continuously updates the chat log with new messages from the backend.
+        """
+        while True:
+            if len(self.backend.messageList) > 0:
+                # Assuming the last message is the most recent one
+                new_message = self.backend.messageList.pop()
+                # Update the chat log for the relevant contact
+                self.updateChatLog(new_message[1], new_message[2])
+                # Refresh the chat bubbles
+                self.openChat(new_message[1])
+            self.update_idletasks()
+            self.after(1000, self.updateLoop)  # Check for new messages every second
+    
+    
     def sendMessage(self, message):
         #placeholder for sending message to backend
+        self.backend.send_message(message[0], message[1])
         msg = " ".join(message)
         
         print(f"Sending message: {msg}")
    
    
     def run(self):
+        
         self.mainloop()
         
     
