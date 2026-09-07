@@ -14,9 +14,10 @@ class FrontendGUI(Tk):
         self.colorscheme = "frosted"
         self.setColorscheme(self.colorscheme)
         self.configure(bg=self.windowColor)
-        self.username = "Bob"
+        self.username = "Alice"
         #test feature, put into login function later:
         self.initializeBackend(self.username)
+        self.chatLogs = None  # Initialize chatLogs to None
         #self.updateLoop()  # Start the update loop for receiving messages
 
 
@@ -68,6 +69,9 @@ class FrontendGUI(Tk):
         geometry = self.winfo_geometry().split("+")[0]
         for i in self.winfo_children():
             i.destroy()
+        
+        #this is important to know what messages to fetch from the backend  
+        self.currentContact = contact
             
         # top bar for buttons and contact name
         topBar = tk.Frame(self, height=50, bg="#29353C")
@@ -92,7 +96,7 @@ class FrontendGUI(Tk):
         contactButton = tk.Button(topBarLeft, text="Back", bg="#DFEBF6",fg="black", activebackground = "#AAC7D8", bd = 0, relief = "flat", command=lambda: self.contactList(self.getContacts()))
         contactButton.pack(side=tk.LEFT, padx=10, pady=10)
         
-        menuButton = tk.Button(topBarRight, text="Menu", bg="#DFEBF6",fg="black", activebackground = "#AAC7D8", bd = 0, relief = "flat", command=lambda: print("Menu button clicked"))
+        menuButton = tk.Button(topBarRight, text="Menu", bg="#DFEBF6",fg="black", activebackground = "#AAC7D8", bd = 0, relief = "flat", command=lambda: self.openMenu())
         menuButton.pack(side=tk.RIGHT, padx=10, pady=10)
         
         contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg="#DFEBF6",fg="black")
@@ -152,43 +156,57 @@ class FrontendGUI(Tk):
     def getChatLog(self, contact):
         #placeholder for getting messages from backend
         #format: [[unread:bool, sender: str (self/foreign), message: str], ...]
-        return [[0, "mine", "Hello!"], [0, "foreign", "Hi there!"], [0, "mine", "How are you?"], [1, "foreign", "I'm good, thanks!"]]
+        if self.chatLogs == None:
+            self.chatLogs = {
+                "Alice": [[0, "mine", "Hello!"], [0, "foreign", "Hi there!"], [0, "mine", "How are you?"], [1, "foreign", "I'm good, thanks!"]],
+                "Bob": [[0, "mine", "Hey Bob!"], [1, "foreign", "Hey!"], [0, "mine", "What's up?"], [0, "foreign", "Not much, you?"]],
+                "Charlie": [[0, "mine", "Hey Charlie!"], [0, "foreign", "Hey!"], [0, "mine", "How's it going?"], [1, "foreign", "Good, you?"]]
+            }
+        return self.chatLogs.get(contact)
     
     
-    def updateChatLog(self, contact, message):
-        #placeholder for updating chat log in backend
-        print(f"Updating chat log for {contact} with message: {message}")
-        for i in self.backend.messageList:
-            if i[0] == contact:
-                if i[1] == True:  # If the message is unread
-                    newChatLog = self.getChatLog(contact).append(i[1:])
-                    i[1] = False  # Mark the message as read
+    def updateChatLog(self, contact):
+        newChatLog = self.getChatLog(contact)
         
+        for i in self.backend.messageList[:] : 
+             
+            if i[0] == contact and i[1] == True:
+                newChatLog.append(i[1:])
+                self.backend.messageList.remove(i)
+                
+        self.chatLogs[contact] = newChatLog
         return newChatLog
+                        
 
     
     def updateLoop(self):
         """
         Continuously updates the chat log with new messages from the backend.
         """
-        while True:
+        #while True:
+        if self.currentContact != None:
             if len(self.backend.messageList) > 0:
-                # Assuming the last message is the most recent one
-                new_message = self.backend.messageList.pop()
                 # Update the chat log for the relevant contact
-                self.updateChatLog(new_message[1], new_message[2])
+                self.updateChatLog(self.currentContact)
                 # Refresh the chat bubbles
-                self.openChat(new_message[1])
+                self.openChat(self.currentContact)
             self.update_idletasks()
-            self.after(1000, self.updateLoop)  # Check for new messages every second
+                #self.after(1000, self.updateLoop)  # Check for new messages every second
+    
+    
+    def openMenu(self):
+        #placeholder for opening menu
+        self.updateLoop()
+        print("Menu opened")
     
     
     def sendMessage(self, message):
         #placeholder for sending message to backend
         self.backend.send_message(message[0], message[1])
+        self.chatLogs[message[0]].append([0, "mine", message[1]])  # Append sent message to the chat log
         msg = " ".join(message)
         
-        print(f"Sending message: {msg}")
+        #print(f"Sending message: {msg}")
    
    
     def run(self):

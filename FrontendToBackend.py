@@ -46,7 +46,7 @@ class MessengerClient:
 
 					lineList = line.split(" ")
 					if lineList[0] == "RECEIVE_MESSAGE" and len(lineList) >= 3:
-						self.messageList.append([lineList[1], True, "foreign", " ".join(lineList[2:])])  # Append the message to the list
+						self.messageList.append([lineList[1], 1, "foreign", " ".join(lineList[2:])])  # Append the message to the list
 		except (ConnectionError, OSError, UnicodeError):
 			if self.running:
 				print("\nVerbindung zum Server verloren.")
