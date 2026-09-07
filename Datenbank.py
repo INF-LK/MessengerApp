@@ -44,6 +44,18 @@ def auslesen_nachrichten():
     return daten
 
 
+def auslesen_nachrichten_von_nutzer(nutzer):
+    conn = sqlite3.connect("datenbank.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM nachrichten WHERE nutzer = ?",
+        (nutzer,)
+    )
+    daten = cursor.fetchall()
+    conn.close()
+    return daten
+
+
 def speichern_nutzer(name):
     conn = sqlite3.connect("datenbank.db")
     cursor = conn.cursor()
@@ -69,14 +81,3 @@ def datenbank_reset():
     conn.commit()
     conn.close()
     setup_db()
-
-
-setup_db()
-speichern_nutzer("Alice")
-speichern_nutzer("Bob")
-speichern_nachricht("Alice", "Hallo, wie geht's?")
-speichern_nachricht("Bob", "Mir geht's gut, danke!")
-
-print(auslesen_nutzer())
-print(auslesen_nachrichten())
-datenbank_reset()
