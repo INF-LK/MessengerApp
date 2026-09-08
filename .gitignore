@@ -1,3 +1,6 @@
 datenbank.db
 __pycache__
 .vscode/settings.json
+server.crt
+.gitignore
+server.key
