@@ -1,6 +1,8 @@
 import socket
 import threading
 import json
+import ssl
+from pathlib import Path
 
 from Datenbank import (
     anmelden,
@@ -15,6 +17,8 @@ from Datenbank import (
 
 HOST = "0.0.0.0"
 PORT = 5000
+CERTFILE = Path(__file__).with_name("server.crt")
+KEYFILE = Path(__file__).with_name("server.key")
 #wir brauchen:
 #wir kriegen eine Nachricht+Sender+Endpoint+public key(wir machen kein RSA!)
 #wir senden die nachricht an die Richtige person/port (->Von Datenbank)
@@ -29,6 +33,9 @@ class BackendtoFrontend:
         setup_db()
 
     def start(self):
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(certfile=CERTFILE, keyfile=KEYFILE)
+
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((self.host, self.port))
@@ -39,6 +46,12 @@ class BackendtoFrontend:
         try:
             while True:
                 client, address = self.server.accept()
+                try:
+                    client = context.wrap_socket(client, server_side=True)
+                except ssl.SSLError as error:
+                    print(f"SSL handshake failed from {address}: {error}")
+                    client.close()
+                    continue
                 threading.Thread(
                     target=self.handle_client,
                     args=(client, address),
