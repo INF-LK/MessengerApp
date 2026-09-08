@@ -13,13 +13,11 @@ Features
 Quick start
 
 1. Install Python 3.9+ (3.10 recommended).
-2. From the project root, install dependencies if you have a `requirements.txt` file:
+2. From the project root, install dependencies (none by default):
 
-```bash
-python3 -m pip install -r requirements.txt
-```
+    python3 -m pip install -r requirements.txt
 
-If there is no `requirements.txt`, most systems will already have what is needed; install any missing packages as the import errors indicate.
+This project currently uses only the Python standard library; `requirements.txt` is intentionally empty (comments only).
 
 Run the app (development)
 
