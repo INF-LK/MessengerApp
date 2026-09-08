@@ -52,7 +52,12 @@ class FrontendGUI(Tk):
         Initializes the backend connection with the given username.
         """
         self.backend = FrontendToBackend.MessengerClient(username)
-        self.backend.connect()    
+        try:
+            self.backend.connect()
+        except OSError as e:
+            raise ConnectionError(
+                f"Failed to connect to backend at {self.backend.host}:{self.backend.port}"
+            ) from e
         
     def contactList(self, contacts: list):
         """
