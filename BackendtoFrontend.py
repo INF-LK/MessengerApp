@@ -124,6 +124,10 @@ class BackendtoFrontend:
         if method in ("CHATS", "MESSAGES"):
             if username is None:
                 return f"ERROR connect before {method.lower()}"
+            if len(parts) != 2 or not parts[1]:
+                return f"ERROR {method} requires token"
+            if parts[1] != active_token or benutzer_zu_token(parts[1]) != username:
+                return "ERROR invalid token"
             if method == "CHATS":
                 return f"CHATS {json.dumps(chats_von_nutzer(username), ensure_ascii=True)}"
             messages = {}
