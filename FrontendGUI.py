@@ -33,17 +33,17 @@ class FrontendGUI(Tk):
            "trans","#1fa6de","#df859a","#cbb3f7","#55cdfc","#f5a9b8","#ffffff",
            "pride", "#e50000", "#ff8c00", "#ffef00", "#00811f", "#0044ff", "#760089"
            ]
-        help = schemes.index(scheme)
-        if scheme in schemes:
-            self.windowColor = schemes[help+1]
-            self.buttonColor = schemes[help+3]
-            self.entryColor = schemes[help+3]
-            self.labelColor = schemes[help+3]
-            self.buttonHoverColor = schemes[help+2]
-            self.topBarColor = schemes[help+4]
-            self.bubbleColor = schemes[help+5]
-            self.spareColor = schemes[help+6]
-        pass
+        if scheme not in schemes:
+            raise ValueError(f"Unknown colorscheme: {scheme}")
+        idx = schemes.index(scheme)
+        self.windowColor = schemes[idx+1]
+        self.buttonHoverColor = schemes[idx+2]
+        self.buttonColor = schemes[idx+3]
+        self.entryColor = schemes[idx+3]
+        self.labelColor = schemes[idx+3]
+        self.topBarColor = schemes[idx+4]
+        self.bubbleColor = schemes[idx+5]
+        self.spareColor = schemes[idx+6]
     
     
     
