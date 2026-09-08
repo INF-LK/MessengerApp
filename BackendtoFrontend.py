@@ -103,6 +103,8 @@ class BackendtoFrontend:
                 if connected_username in self.clients and self.clients[connected_username] is not client:
                     return "ERROR username already connected"
             new_token = token_erneuern(parts[1])
+            if new_token is None:
+                return "ERROR invalid or expired token"
             with self.lock:
                 self.clients[connected_username] = client
             return f"CONNECTED {connected_username} {new_token}"
