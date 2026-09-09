@@ -1,6 +1,6 @@
 from tkinter import Tk
 import tkinter as tk
-import FrontendToBackend
+import Client
 import threading
 
 class FrontendGUI(Tk):
@@ -51,7 +51,7 @@ class FrontendGUI(Tk):
         """
         Initializes the backend connection with the given username.
         """
-        self.backend = FrontendToBackend.MessengerClient(username)
+        self.backend = Client.MessengerClient(username)
         try:
             self.backend.connect()
         except OSError as e:
