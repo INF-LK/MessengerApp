@@ -2,6 +2,7 @@ from tkinter import Tk
 import tkinter as tk
 import Client
 import threading
+import random as rd
 
 class FrontendGUI(Tk):
 
@@ -58,6 +59,59 @@ class FrontendGUI(Tk):
             raise ConnectionError(
                 f"Failed to connect to backend at {self.backend.host}:{self.backend.port}"
             ) from e
+        
+    def loginScreen(self):  
+        for i in self.winfo_children():
+            i.destroy()  
+           
+        loginFrame = tk.Frame(self, bg=self.windowColor)
+        loginFrame.pack(anchor="center", expand=True) 
+        
+        usernameLabel = tk.Label(loginFrame, text="Username:", bg=self.windowColor,fg="black")
+        usernameLabel.pack(pady=5)
+        usernameEntry = tk.Entry(loginFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat")
+        usernameEntry.pack(pady=10)
+        passwordLabel = tk.Label(loginFrame, text="Password:", bg=self.windowColor,fg="black")
+        passwordLabel.pack(pady=5)
+        passwordEntry = tk.Entry(loginFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat", show="*")
+        passwordEntry.pack(pady=10)
+        
+        loginButton = tk.Button(loginFrame , text="Login", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.initializeBackend(usernameEntry.get()))
+        loginButton.pack(pady=50)
+        
+        
+        registerLabel = tk.Label(loginFrame, text="Don't have an account?", bg=self.windowColor,fg="black")
+        registerLabel.pack(pady=10)
+        registerButton = tk.Button(loginFrame, text="Register", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.registerScreen())
+        registerButton.pack(pady=10)
+            
+    def registerScreen(self):
+        for i in self.winfo_children():
+            i.destroy()  
+           
+        registerFrame = tk.Frame(self, bg=self.windowColor)
+        registerFrame.pack(anchor="center", expand=True) 
+        
+        usernameLabel = tk.Label(registerFrame, text="Username:", bg=self.windowColor,fg="black")
+        usernameLabel.pack(pady=5)
+        usernameEntry = tk.Entry(registerFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat")
+        usernameEntry.pack(pady=10)
+        passwordLabel = tk.Label(registerFrame, text="Password:", bg=self.windowColor,fg="black")
+        passwordLabel.pack(pady=5)
+        passwordEntry = tk.Entry(registerFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat", show="*", )
+        passwordEntry.pack(pady=10)
+        passwordStrengthLabel = tk.Label(registerFrame, text="Password Strength:", bg=self.windowColor,fg="black")
+        passwordStrengthLabel.pack(pady=5)
+        passwordStrengthBar = tk.Frame(registerFrame, width=200, height=20, bg=self.entryColor, borderwidth = -2,relief = "flat")
+        passwordStrengthBar.pack(pady=10)
+        passwordStrengthBar.pack_propagate(False)
+        
+        registerButton = tk.Button(registerFrame , text="Register", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.initializeBackend(usernameEntry.get()))
+        registerButton.pack(pady=50)
+        
+        backButton = tk.Button(registerFrame , text="Back", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.loginScreen())
+        backButton.pack(pady=10)
+        
         
     def contactList(self, contacts: list):
         """
@@ -202,7 +256,7 @@ class FrontendGUI(Tk):
             #self.update_idletasks()
         #except Exception as e:
             #print(f"Error in updateLoop: {e}")
-        self.after(2500, self.updateLoop)  # Check for new messages every second
+        self.after(500, self.updateLoop)  # Check for new messages every second
                 
     
     
@@ -227,7 +281,8 @@ class FrontendGUI(Tk):
         
     
 chat = FrontendGUI()
-chat.contactList(["Alice", "Bob", "Charlie"])
+chat.loginScreen()  # Start with the login screen
+#chat.contactList(["Alice", "Bob", "Charlie"])
 chat.run()
 
 
