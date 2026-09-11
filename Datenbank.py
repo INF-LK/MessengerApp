@@ -1,10 +1,14 @@
+import hashlib
+import os
 import secrets
-import sqlite3
 from datetime import datetime, timedelta, timezone
+
+from sqlcipher3 import dbapi2 as sqlite3
 
 
 DATABASE = "datenbank.db"
 TOKEN_LIFETIME = timedelta(days=30)
+DATABASE_KEY_ENV = "MESSENGER_DB_KEY"
 
 
 def _now():
@@ -13,6 +17,15 @@ def _now():
 
 def _connection():
     connection = sqlite3.connect(DATABASE)
+    key_material = os.environ.get(DATABASE_KEY_ENV)
+    if not key_material:
+        connection.close()
+        raise RuntimeError(
+            f"{DATABASE_KEY_ENV} muss zum Zugriff auf die verschlüsselte Datenbank gesetzt sein"
+        )
+    key = hashlib.sha256(key_material.encode("utf-8")).hexdigest()
+    connection.execute(f'PRAGMA key = "x\'{key}\'"')
+    connection.execute("PRAGMA cipher_compatibility = 4")
     connection.row_factory = sqlite3.Row
     return connection
 
