@@ -1,1 +1,7 @@
+# Infcord requirements
+# Recommended Python version: 3.9+
+
+# Notes:
+# - The GUI uses tkinter, which is included with standard CPython but may require OS-level "tk" support on some systems.
+
 sqlcipher3>=0.6.2

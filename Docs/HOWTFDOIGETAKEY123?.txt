@@ -1,0 +1,5 @@
+Run this: 
+
+openssl req -newkey rsa:2048 -nodes -keyout server.key -x509 -days 365 -out server.crt
+
+If you want to do the quiz, do it, if not just press enter a few times!!!!!!!!!!!
