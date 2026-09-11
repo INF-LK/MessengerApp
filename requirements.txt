@@ -1,7 +1,7 @@
 # Infcord requirements
-# No external pip packages required — all imports are from the Python standard library.
 # Recommended Python version: 3.9+
 
 # Notes:
 # - The GUI uses tkinter, which is included with standard CPython but may require OS-level "tk" support on some systems.
-# - If you add external packages (e.g. Pillow for advanced image handling), list them here, one per line.
+
+sqlcipher3>=0.6.2
