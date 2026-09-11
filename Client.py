@@ -20,6 +20,7 @@ class MessengerClient:
 		self.token = None
 		self.chats = []
 		self.messages = {}
+		self.messageList = []
 		self.send_lock = threading.Lock()
 		self.response_queue = queue.Queue()
 
@@ -105,6 +106,7 @@ class MessengerClient:
 				if line.startswith("RECEIVE_MESSAGE "):
 					_, sender, message = line.split(maxsplit=2)
 					print(f"\nNachricht von {sender}: {message}")
+					self.messageList.append([sender, 1, "foreign", message])
 				else:
 					self.response_queue.put(line)
 					continue
