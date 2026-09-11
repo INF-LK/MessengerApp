@@ -17,10 +17,11 @@ class FrontendGUI(Tk):
         self.configure(bg=self.windowColor)
         self.username = "Alice"
         #test feature, put into login function later:
-        self.initializeBackend(self.username)
+        #self.initializeBackend(self.username)
         self.chatLogs = None  # Initialize chatLogs to None
         self.currentContact = None 
         self.updateLoop()  # Start the update loop for receiving messages
+        self.passwordBoxes = None
 
 
     def setColorscheme(self, scheme):
@@ -48,11 +49,11 @@ class FrontendGUI(Tk):
     
     
     
-    def initializeBackend(self, username):
+    def initializeBackend(self, username, password):
         """
         Initializes the backend connection with the given username.
         """
-        self.backend = Client.MessengerClient(username)
+        self.backend = Client.MessengerClient(username, password)
         try:
             self.backend.connect()
         except OSError as e:
@@ -76,7 +77,7 @@ class FrontendGUI(Tk):
         passwordEntry = tk.Entry(loginFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat", show="*")
         passwordEntry.pack(pady=10)
         
-        loginButton = tk.Button(loginFrame , text="Login", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.initializeBackend(usernameEntry.get()))
+        loginButton = tk.Button(loginFrame , text="Login", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.initializeBackend(usernameEntry.get(), passwordEntry.get()))
         loginButton.pack(pady=50)
         
         
@@ -88,7 +89,9 @@ class FrontendGUI(Tk):
     def registerScreen(self):
         for i in self.winfo_children():
             i.destroy()  
-           
+        
+        self.passwordStrength = 0  # Initialize password strength variable
+          
         registerFrame = tk.Frame(self, bg=self.windowColor)
         registerFrame.pack(anchor="center", expand=True) 
         
@@ -98,19 +101,45 @@ class FrontendGUI(Tk):
         usernameEntry.pack(pady=10)
         passwordLabel = tk.Label(registerFrame, text="Password:", bg=self.windowColor,fg="black")
         passwordLabel.pack(pady=5)
-        passwordEntry = tk.Entry(registerFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat", show="*", )
+        passwordEntry = tk.Entry(registerFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat", show="*")
+        passwordEntry.bind("<KeyRelease>", lambda event: self.updatePasswordStrength(passwordEntry.get(), passwordStrengthBar))
         passwordEntry.pack(pady=10)
         passwordStrengthLabel = tk.Label(registerFrame, text="Password Strength:", bg=self.windowColor,fg="black")
         passwordStrengthLabel.pack(pady=5)
-        passwordStrengthBar = tk.Frame(registerFrame, width=200, height=20, bg=self.entryColor, borderwidth = -2,relief = "flat")
+        passwordStrengthBar = tk.Frame(registerFrame, width=240, height=20, bg=self.entryColor, borderwidth = -2,relief = "flat")
         passwordStrengthBar.pack(pady=10)
         passwordStrengthBar.pack_propagate(False)
+        #self.passwordStrengthLoop(passwordStrengthBar)  # Start the password strength update loop
         
         registerButton = tk.Button(registerFrame , text="Register", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.initializeBackend(usernameEntry.get()))
         registerButton.pack(pady=50)
         
         backButton = tk.Button(registerFrame , text="Back", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.loginScreen())
         backButton.pack(pady=10)
+        
+    def updatePasswordStrength(self, password, bar):
+        self.passwordStrength = rd.randint(0, 10)  # actual password strength calculation
+        print(f"Password strength: {self.passwordStrength}")  # Debugging output
+        if self.passwordBoxes == None:
+            self.passwordBoxes = []
+            for i in range(10):
+                self.passwordBoxes.append(tk.Frame(bar, width=20, height=20, bg=self.entryColor, borderwidth=-2, relief="flat"))
+            
+        if bar != None:
+            for i in range(10):
+                self.passwordBoxes[i].configure(bg=self.entryColor)
+            for i in range(self.passwordStrength):
+                if i < 5:
+                    self.passwordBoxes[i].configure(bg="red")
+                elif i < 8:
+                    self.passwordBoxes[i].configure(bg="yellow")
+                else:
+                    self.passwordBoxes[i].configure(bg="green")
+            for box in self.passwordBoxes:
+
+                box.pack(side=tk.LEFT, padx=2)
+            self.update_idletasks()
+                
         
         
     def contactList(self, contacts: list):
@@ -285,8 +314,7 @@ class FrontendGUI(Tk):
         #except Exception as e:
             #print(f"Error in updateLoop: {e}")
         self.after(500, self.updateLoop)  # Check for new messages every second
-                
-    
+ 
     
     def openMenu(self):
         #placeholder for opening menu
