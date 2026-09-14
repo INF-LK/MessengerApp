@@ -194,4 +194,3 @@ def chats_von_nutzer(nutzer):
     ).fetchall()
     conn.close()
     return [row["chat"] for row in rows]
-

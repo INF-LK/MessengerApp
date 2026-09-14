@@ -9,12 +9,12 @@
 
 ---
 
-- Sonst: LOGIN [Benutzername] [Passwort] -> Frontend identifiziert sich beim Backend
+- Sonst: LOGIN [Benutzername] [Passwort-Hash] -> Frontend hasht das Passwort mit SHA-256 und identifiziert sich beim Backend
 - CONNECT [Token] -> Backend bestätigt authorisierung, indem es dem Frontend ein Token gibt. Falls der Login nicht erfolgreich war, wird kein Token zurückgegeben
 
 ---
 
-- Sonst: REGISTER [Benutzername] [Passwort]
+- Sonst: REGISTER [Benutzername] [Passwort-Hash] -> Frontend hasht das Passwort mit SHA-256 und registriert sich beim Backend
 - CONNECT [Token] -> Backend bestätigt authorisierung, indem es dem Frontend ein Token gibt. Falls der Login nicht erfolgreich war, wird kein Token zurückgegeben
 
 ---
