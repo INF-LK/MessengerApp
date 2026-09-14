@@ -12,6 +12,7 @@ class FrontendGUI(Tk):
         self.title("Infcord")
         self.geometry("1020x1019")
         self.resizable(False, False)
+        self.schemes = ["darkmode", "lightmode", "frosted", "trans", "pride"]
         self.colorscheme = "trans"
         self.setColorscheme(self.colorscheme)
         self.configure(bg=self.windowColor)
@@ -24,17 +25,17 @@ class FrontendGUI(Tk):
         self.passwordBoxes = None
 
 
-    def setColorscheme(self, scheme):
-        self.colorscheme = scheme
-        """
-        other color schemes except for frosted are not intended for actual use
-        """
+    def setColorscheme(self, scheme, lastcontact=None):
         schemes = ["darkmode","#000000","#000000","#000000","#000000","#000000","#000000",
            "lightmode","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff",
            "frosted","#29353c","#44576d","#768a96","#aac7d8","#dfebf6","#e6e6e6",
            "trans","#1fa6de","#df859a","#cbb3f7","#55cdfc","#f5a9b8","#ffffff",
            "pride", "#e50000", "#ff8c00", "#ffef00", "#00811f", "#0044ff", "#760089"
            ]
+        self.colorscheme = scheme
+        """
+        other color schemes except for frosted are not intended for actual use
+        """
         if scheme not in schemes:
             raise ValueError(f"Unknown colorscheme: {scheme}")
         idx = schemes.index(scheme)
@@ -46,6 +47,9 @@ class FrontendGUI(Tk):
         self.topBarColor = schemes[idx+4]
         self.bubbleColor = schemes[idx+5]
         self.spareColor = schemes[idx+6]
+
+        self.configure(bg=self.windowColor)
+        self.openMenu(lastcontact)
     
     
     
@@ -175,17 +179,43 @@ class FrontendGUI(Tk):
         
         
     def contactList(self, contacts: list):
+
         """
         Displays a list of contacts as buttons. Clicking a button opens the chat with that contact.
         """
         for i in self.winfo_children():
             i.destroy()
-        for g in contacts:
-            button = tk.Button(self, text=g, bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda g=g:self.openChat(g))
-            button = tk.Button(self, text=g, bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda g=g:self.openChat(g))
-            button.pack(pady=10)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+
+        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
+        topBar.grid(row=0, column=0, sticky="ew")
+
+        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarLeft.grid(row=0, column=0, sticky="ew")
+
+        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarCenter.grid(row=0, column=1, sticky="ew")
         
-        self.currentContact = None  # Reset current contact when showing contact list
+        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarRight.grid(row=0, column=2, sticky="ew")
+
+        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu())
+        menuButton.pack(side=tk.RIGHT, padx=10, pady=10)
+
+        #i don't fully understand column weights but ai suggested i add this and it helps?
+        topBar.grid_columnconfigure(0, weight=1)
+        topBar.grid_columnconfigure(1, weight=2)
+        topBar.grid_columnconfigure(2, weight=1)
+
+        
+        self.grid_columnconfigure(0, weight=1)
+        for row, g in enumerate(contacts, start=1):
+            button = tk.Button(self, text=g, bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda g=g:self.openChat(g))
+            button.grid(row=row, column=0, sticky="w", pady=20, padx=20)
+        
         self.currentContact = None  # Reset current contact when showing contact list
     
     def openChat(self, contact):
@@ -231,8 +261,8 @@ class FrontendGUI(Tk):
         contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.contactList(self.getContacts()))
         contactButton.pack(side=tk.LEFT, padx=10, pady=10)
         
-        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu())
-        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu())
+        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu(self.currentContact))
+        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu(self.currentContact))
         menuButton.pack(side=tk.RIGHT, padx=10, pady=10)
         
         contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
@@ -348,10 +378,50 @@ class FrontendGUI(Tk):
         self.after(500, self.updateLoop)  # Check for new messages every second
  
     
-    def openMenu(self):
-        #placeholder for opening menu
-        #self.updateLoop()
-        print("Menu opened")
+    def openMenu(self, lastcontact=None):
+        geometry = self.winfo_geometry().split("+")[0]
+        
+        for i in self.winfo_children():
+            i.destroy()
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+            
+        # top bar for buttons and contact name
+        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
+        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
+        topBar.grid(row=0, column=0, sticky="ew")
+
+        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarLeft.grid(row=0, column=0, sticky="ew")
+
+        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarCenter.grid(row=0, column=1, sticky="ew")
+        
+        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarRight.grid(row=0, column=2, sticky="ew")
+
+        #i don't fully understand column weights but ai suggested i add this and it helps?
+        topBar.grid_columnconfigure(0, weight=1)
+        topBar.grid_columnconfigure(1, weight=2)
+        topBar.grid_columnconfigure(2, weight=1)
+
+        contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openChat(lastcontact) if lastcontact else self.contactList(self.getContacts()))
+        contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openChat(lastcontact) if lastcontact else self.contactList(self.getContacts()))
+        contactButton.pack(side=tk.LEFT, padx=10, pady=10)
+
+        colorLabel = tk.Label(topBarCenter, text="Color Scheme", bg=self.labelColor,fg="black")
+        colorLabel.pack(fill=tk.BOTH, padx=10, pady=10)
+
+        self.grid_columnconfigure(0, weight=1)
+        for row, g in enumerate(self.schemes, start=1):
+            button = tk.Button(self, text=g, bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda g=g:self.setColorscheme(g, lastcontact))
+            button.grid(row=row, column=0, sticky="w", pady=20, padx=20)
+
     
     
     def sendMessage(self, message):
