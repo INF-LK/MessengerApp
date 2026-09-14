@@ -9,7 +9,7 @@ from pathlib import Path
 HOST = "127.0.0.1"
 PORT = 5000
 CERTFILE = Path(__file__).with_name("server.crt")
-SERVER_HOSTNAME = "INF-LK"
+SERVER_HOSTNAME = "localhost"
 
 
 class MessengerClient:
