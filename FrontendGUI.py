@@ -15,7 +15,7 @@ class FrontendGUI(Tk):
         self.colorscheme = "trans"
         self.setColorscheme(self.colorscheme)
         self.configure(bg=self.windowColor)
-        self.username = "Alice"
+        self.username = "Bob"
         #test feature, put into login function later:
         #self.initializeBackend(self.username)
         self.chatLogs = None  # Initialize chatLogs to None
@@ -49,24 +49,31 @@ class FrontendGUI(Tk):
     
     
     
-    def initializeBackend(self, username, password):
+    def initializeBackend(self, username, password, mode):
         """
         Initializes the backend connection with the given username.
         """
         self.backend = Client.MessengerClient(username, password)
+        print(self.backend, password)
         try:
-            self.backend.connect()
+            self.backend.connect(mode=mode)
         except OSError as e:
             raise ConnectionError(
                 f"Failed to connect to backend at {self.backend.host}:{self.backend.port}"
             ) from e
         
-    def loginScreen(self):  
+    def loginScreen(self, error = False):  
         for i in self.winfo_children():
             i.destroy()  
-           
+        
+        
+        
         loginFrame = tk.Frame(self, bg=self.windowColor)
         loginFrame.pack(anchor="center", expand=True) 
+        
+        if error:
+            errorLabel = tk.Label(loginFrame, text="Incorrect Username or Password!", bg=self.windowColor,fg="black")
+            errorLabel.pack()
         
         usernameLabel = tk.Label(loginFrame, text="Username:", bg=self.windowColor,fg="black")
         usernameLabel.pack(pady=5)
@@ -77,7 +84,7 @@ class FrontendGUI(Tk):
         passwordEntry = tk.Entry(loginFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat", show="*")
         passwordEntry.pack(pady=10)
         
-        loginButton = tk.Button(loginFrame , text="Login", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.initializeBackend(usernameEntry.get(), passwordEntry.get()))
+        loginButton = tk.Button(loginFrame , text="Login", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda : self.attemptLogin(usernameEntry.get(), passwordEntry.get()))
         loginButton.pack(pady=50)
         
         
@@ -85,8 +92,18 @@ class FrontendGUI(Tk):
         registerLabel.pack(pady=10)
         registerButton = tk.Button(loginFrame, text="Register", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.registerScreen())
         registerButton.pack(pady=10)
+        
+    def attemptLogin(self, username, password):
+        print(username, password)
+        try:
+            self.initializeBackend(username, password, "LOGIN")
+            self.contactList(self.getContacts(username))
             
-    def registerScreen(self):
+        except Exception as e:
+            print(e)
+            self.loginScreen(error=True)
+            
+    def registerScreen(self, error=False):
         for i in self.winfo_children():
             i.destroy()  
         
@@ -94,6 +111,10 @@ class FrontendGUI(Tk):
           
         registerFrame = tk.Frame(self, bg=self.windowColor)
         registerFrame.pack(anchor="center", expand=True) 
+        
+        if error:
+            errorLabel = tk.Label(registerFrame, text="This account probably already exists, idk try logging in instead or smth", bg=self.windowColor,fg="black")
+            errorLabel.pack()
         
         usernameLabel = tk.Label(registerFrame, text="Username:", bg=self.windowColor,fg="black")
         usernameLabel.pack(pady=5)
@@ -111,11 +132,22 @@ class FrontendGUI(Tk):
         passwordStrengthBar.pack_propagate(False)
         #self.passwordStrengthLoop(passwordStrengthBar)  # Start the password strength update loop
         
-        registerButton = tk.Button(registerFrame , text="Register", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.initializeBackend(usernameEntry.get()))
+        registerButton = tk.Button(registerFrame , text="Register", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.attemptRegister(usernameEntry.get(), passwordEntry.get()))
         registerButton.pack(pady=50)
         
         backButton = tk.Button(registerFrame , text="Back", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.loginScreen())
         backButton.pack(pady=10)
+        
+    def attemptRegister(self, username, password):
+        print(username, password)
+        try:
+            self.initializeBackend(username, password, "REGISTER")
+            self.contactList(self.getContacts(username))
+            
+        except Exception as e:
+            print(e)
+            self.registerScreen(error=True)
+        
         
     def updatePasswordStrength(self, password, bar):
         self.passwordStrength = rd.randint(0, 10)  # actual password strength calculation
@@ -269,7 +301,7 @@ class FrontendGUI(Tk):
             self.chatBubble(bubbleFrame, i) 
         
         
-    def getContacts(self):
+    def getContacts(self, username = None):
         #placeholder for getting contacts from backend
         return ["Alice", "Bob", "Charlie"]
         

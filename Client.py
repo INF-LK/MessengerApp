@@ -32,7 +32,7 @@ class MessengerClient:
 		self.response_queue = queue.Queue()
 
 	def connect(self, mode="LOGIN", token=None):
-		try:
+		#try:
 			context = ssl.create_default_context(
 				ssl.Purpose.SERVER_AUTH,
 				cafile=str(self.ca_file),
@@ -77,9 +77,11 @@ class MessengerClient:
 				raise ConnectionError("Backend hat einen anderen Benutzer verbunden.")
 			self.username = fields[1]
 			self.token = fields[2]
-		except (ConnectionError, OSError, ValueError):
-			self.close()
-			raise
+			print("Probably connected")
+		#except (ConnectionError, OSError, ValueError):
+			#print("BIG error occured here!!")
+			#self.close()
+			#raise
 
 	def request(self, command):
 		self.send_command(command)
