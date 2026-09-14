@@ -9,10 +9,36 @@ from sqlcipher3 import dbapi2 as sqlite3
 DATABASE = "datenbank.db"
 TOKEN_LIFETIME = timedelta(days=30)
 DATABASE_KEY_ENV = "MESSENGER_DB_KEY"
+PASSWORD_HASH_ITERATIONS = 600_000
 
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
+
+
+def _passwort_hash(password):
+    salt = os.urandom(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), salt, PASSWORD_HASH_ITERATIONS
+    )
+    return f"pbkdf2_sha256${PASSWORD_HASH_ITERATIONS}${salt.hex()}${digest.hex()}"
+
+
+def _passwort_pruefen(password, gespeicherter_hash):
+    try:
+        algorithmus, iterations, salt_hex, digest_hex = gespeicherter_hash.split("$")
+        if algorithmus != "pbkdf2_sha256":
+            return False
+        iterations = int(iterations)
+        salt = bytes.fromhex(salt_hex)
+        erwarteter_digest = bytes.fromhex(digest_hex)
+    except (ValueError, TypeError):
+        return False
+
+    digest = hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), salt, int(iterations)
+    )
+    return secrets.compare_digest(digest, erwarteter_digest)
 
 
 def _connection():
@@ -105,7 +131,7 @@ def speichern_nutzer(name, password):
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO nutzer (name, passwort, letzter_login) VALUES (?, ?, NULL)",
-        (name, password),
+        (name, _passwort_hash(password)),
     )
     conn.commit()
     conn.close()
@@ -144,12 +170,21 @@ def anmelden(name, password):
     setup_db()
     conn = _connection()
     user = conn.execute(
-        "SELECT name FROM nutzer WHERE name = ? AND passwort = ?",
-        (name, password),
+        "SELECT name, passwort FROM nutzer WHERE name = ?",
+        (name,),
     ).fetchone()
     if user is None:
         conn.close()
         return None
+    if not _passwort_pruefen(password, user["passwort"]):
+        # Alte Klartextwerte werden nach erfolgreichem Login einmalig migriert.
+        if not secrets.compare_digest(password, user["passwort"]):
+            conn.close()
+            return None
+        conn.execute(
+            "UPDATE nutzer SET passwort = ? WHERE name = ?",
+            (_passwort_hash(password), name),
+        )
     conn.execute("UPDATE nutzer SET letzter_login = ? WHERE name = ?", (_now(), name))
     token = secrets.token_urlsafe(32)
     conn.execute("INSERT INTO tokens (token, nutzer, erstellt_am) VALUES (?, ?, ?)", (token, name, _now()))

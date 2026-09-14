@@ -183,3 +183,4 @@ if __name__ == "__main__":
 	if not username or not password:
 		raise SystemExit("Benutzername und Passwort sind erforderlich.")
 	MessengerClient(username, password).run()
+
