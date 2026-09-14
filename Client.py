@@ -1,19 +1,26 @@
 import json
 import queue
 import socket
+import ssl
 import threading
+from pathlib import Path
 
 
 HOST = "127.0.0.1"
 PORT = 5000
+CERTFILE = Path(__file__).with_name("server.crt")
+SERVER_HOSTNAME = "INF-LK"
 
 
 class MessengerClient:
-	def __init__(self, username, password, host=HOST, port=PORT):
+	def __init__(self, username, password, host=HOST, port=PORT,
+				 ca_file=CERTFILE, server_hostname=SERVER_HOSTNAME):
 		self.username = username
 		self.password = password
 		self.host = host
 		self.port = port
+		self.ca_file = Path(ca_file)
+		self.server_hostname = server_hostname
 		self.socket = None
 		self.reader = None
 		self.running = False
@@ -26,7 +33,19 @@ class MessengerClient:
 
 	def connect(self, mode="LOGIN", token=None):
 		try:
-			self.socket = socket.create_connection((self.host, self.port))
+			context = ssl.create_default_context(
+				ssl.Purpose.SERVER_AUTH,
+				cafile=str(self.ca_file),
+			)
+			raw_socket = socket.create_connection((self.host, self.port))
+			try:
+				self.socket = context.wrap_socket(
+					raw_socket,
+					server_hostname=self.server_hostname,
+				)
+			except (OSError, ssl.SSLError):
+				raw_socket.close()
+				raise
 			self.reader = self.socket.makefile("r", encoding="utf-8")
 
 			welcome = self.reader.readline().rstrip("\r\n")
