@@ -3,6 +3,7 @@ import tkinter as tk
 import Client
 import threading
 import random as rd
+import time
 
 class FrontendGUI(Tk):
 
@@ -101,7 +102,7 @@ class FrontendGUI(Tk):
         print(username, password)
         try:
             self.initializeBackend(username, password, "LOGIN")
-            self.contactList(self.getContacts(username))
+            self.contactList(self.getContacts(username, login=True), login=True)
             
         except Exception as e:
             print(e)
@@ -146,7 +147,7 @@ class FrontendGUI(Tk):
         #print(username, password)
         try:
             self.initializeBackend(username, password, "REGISTER")
-            self.contactList(self.getContacts(username))
+            self.contactList(self.getContacts(username, login=True))
             
         except Exception as e:
             print(e)
@@ -183,6 +184,7 @@ class FrontendGUI(Tk):
         """
         Displays a list of contacts as buttons. Clicking a button opens the chat with that contact.
         """
+        
         for i in self.winfo_children():
             i.destroy()
         self.grid_rowconfigure(0, weight=0)
@@ -260,7 +262,9 @@ class FrontendGUI(Tk):
         """
         Opens the chat window for the selected contact. 
         """
-        self.update()
+        
+
+        
         geometry = self.winfo_geometry().split("+")[0]
         for i in self.winfo_children():
             i.destroy()
@@ -268,24 +272,18 @@ class FrontendGUI(Tk):
         #this is important to know what messages to fetch from the backend  
         self.currentContact = contact
         
-        #this is important to know what messages to fetch from the backend  
-        self.currentContact = contact
             
         # top bar for buttons and contact name
-        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
         topBar = tk.Frame(self, height=50, bg=self.topBarColor)
         #topBar.pack(fill=tk.X)
         topBar.grid(row=0, column=0, sticky="ew")
 
         topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
-        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarLeft.grid(row=0, column=0, sticky="ew")
 
         topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
-        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarCenter.grid(row=0, column=1, sticky="ew")
         
-        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight.grid(row=0, column=2, sticky="ew")
 
@@ -296,14 +294,11 @@ class FrontendGUI(Tk):
 
         #buttons and contact name
         contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.contactList(self.getContacts()))
-        contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.contactList(self.getContacts()))
         contactButton.pack(side=tk.LEFT, padx=10, pady=10)
         
         menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu(self.currentContact))
-        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu(self.currentContact))
         menuButton.pack(side=tk.RIGHT, padx=10, pady=10)
         
-        contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
         contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
         contactLabel.pack(fill=tk.X, anchor="center")
 
@@ -319,7 +314,6 @@ class FrontendGUI(Tk):
         
         #first a frame for the chat bubbles, i'll have to find out how to make it scrollable later
         bubbleFrame = tk.Frame(self, bg=self.windowColor)
-        bubbleFrame = tk.Frame(self, bg=self.windowColor)
         bubbleFrame.grid(row=1, column=0, sticky="nsew")
 
         bubbleFrame.bind("<Configure>", lambda e: chatCanvas.configure(scrollregion=chatCanvas.bbox("all")))
@@ -331,14 +325,11 @@ class FrontendGUI(Tk):
         
         #
         self.buildChatBubbles(bubbleFrame, self.getChatLog(contact))
-        #
-        self.buildChatBubbles(bubbleFrame, self.getChatLog(contact))
+        
 
         # text field for sending chat messages
         bottomBar = tk.Frame(self, height=100, bg=self.topBarColor)
-        bottomBar = tk.Frame(self, height=100, bg=self.topBarColor)
         bottomBar.grid(row=2, column=0, sticky="ew")
-        entry = tk.Entry(bottomBar, width=100, bg=self.entryColor,fg="black", borderwidth = -2,relief = "flat")
         entry = tk.Entry(bottomBar, width=100, bg=self.entryColor,fg="black", borderwidth = -2,relief = "flat")
         entry.bind("<Return>", lambda event: self.sendMessage([contact, entry.get()]))
         entry.pack(anchor="center", pady=10)
@@ -353,9 +344,7 @@ class FrontendGUI(Tk):
         """
         unread, sender, msg = message
         bubble = tk.Frame(bubbleFrame, bg=self.bubbleColor, bd=2)#, relief="solid")
-        bubble = tk.Frame(bubbleFrame, bg=self.bubbleColor, bd=2)#, relief="solid")
         bubble.pack(pady=5, padx=10, anchor="w" if sender == "foreign" else "e")
-        label = tk.Label(bubble, text=msg, bg=self.bubbleColor,fg="black", wraplength=400)
         label = tk.Label(bubble, text=msg, bg=self.bubbleColor,fg="black", wraplength=400)
         label.pack(padx=10, pady=5)
     
@@ -378,10 +367,14 @@ class FrontendGUI(Tk):
             self.chatBubble(bubbleFrame, i) 
         
         
-    def getContacts(self, username = None):
+    def getContacts(self, username = None, login=False):
         #placeholder for getting contacts from backend
-        return ["Alice", "Bob", "Charlie","David", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Judy", "Mallory", "Niaj", "Olivia", "Peggy", "Rupert", "Sybil", "Trent", "Victor", "Walter", "Xavier", "Yvonne", "Zara"]
         
+        #return ["Alice", "Bob", "Charlie","David", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Judy", "Mallory", "Niaj", "Olivia", "Peggy", "Rupert", "Sybil", "Trent", "Victor", "Walter", "Xavier", "Yvonne", "Zara"]
+        if login:
+            time.sleep(1)
+            
+        return self.backend.request("CHATS")
         
     def getChatLog(self, contact, test=True):
         #placeholder for getting messages from backend
@@ -395,7 +388,7 @@ class FrontendGUI(Tk):
                 }
                 
         else:
-            self.backend.request("CHATS")
+            self.backend.request("MESSAGES")
             
         return self.chatLogs.get(contact) if self.chatLogs.get(contact) != None else []
     
@@ -427,7 +420,8 @@ class FrontendGUI(Tk):
             #self.update_idletasks()
         #except Exception as e:
             #print(f"Error in updateLoop: {e}")
-        self.after(500, self.updateLoop)  # Check for new messages every second
+        
+        self.after(500, self.updateLoop)  # Check for new messages 
  
     
     def openMenu(self, lastcontact=None):
@@ -442,18 +436,14 @@ class FrontendGUI(Tk):
             
         # top bar for buttons and contact name
         topBar = tk.Frame(self, height=50, bg=self.topBarColor)
-        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
         topBar.grid(row=0, column=0, sticky="ew")
 
-        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarLeft.grid(row=0, column=0, sticky="ew")
 
         topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
-        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarCenter.grid(row=0, column=1, sticky="ew")
         
-        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight.grid(row=0, column=2, sticky="ew")
 
@@ -462,7 +452,6 @@ class FrontendGUI(Tk):
         topBar.grid_columnconfigure(1, weight=2)
         topBar.grid_columnconfigure(2, weight=1)
 
-        contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openChat(lastcontact) if lastcontact else self.contactList(self.getContacts()))
         contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openChat(lastcontact) if lastcontact else self.contactList(self.getContacts()))
         contactButton.pack(side=tk.LEFT, padx=10, pady=10)
 
@@ -483,8 +472,8 @@ class FrontendGUI(Tk):
             self.chatLogs[message[0]].append([0, "mine", message[1]])  # Append sent message to the chat log
         except:
             self.chatLogs[message[0]] = [[0, "mine", message[1]]]
-        msg = " ".join(message)
-        
+        #msg = " ".join(message)
+        self.openChat(message[0])
         #print(f"Sending message: {msg}")
         #print(f"Sending message: {msg}")
    
