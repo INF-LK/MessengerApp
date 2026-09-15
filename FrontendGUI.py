@@ -16,7 +16,7 @@ class FrontendGUI(Tk):
         self.colorscheme = "trans"
         self.setColorscheme(self.colorscheme)
         self.configure(bg=self.windowColor)
-        self.username = "Bob"
+        self.username = None
         #test feature, put into login function later:
         #self.initializeBackend(self.username)
         self.chatLogs = None  # Initialize chatLogs to None
@@ -446,8 +446,3 @@ chat = FrontendGUI()
 chat.loginScreen()  # Start with the login screen
 #chat.contactList(["Alice", "Bob", "Charlie"])
 chat.run()
-
-
-
-
-
