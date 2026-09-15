@@ -1,8 +1,11 @@
 import json
+import hashlib
 import queue
 import socket
 import ssl
+import ssl
 import threading
+from pathlib import Path
 from pathlib import Path
 
 
@@ -10,6 +13,10 @@ HOST = "127.0.0.1"
 PORT = 5000
 CERTFILE = Path(__file__).with_name("server.crt")
 SERVER_HOSTNAME = "localhost"
+
+
+def _hash_password(password):
+	return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
 class MessengerClient:
@@ -62,7 +69,8 @@ class MessengerClient:
 			else:
 				if mode not in ("LOGIN", "REGISTER"):
 					raise ValueError("Ungültiger Anmeldemodus.")
-				response = self.request(f"{mode} {self.username} {self.password}")
+				password_hash = _hash_password(self.password)
+				response = self.request(f"{mode} {self.username} {password_hash}")
 				if not response.startswith("TOKEN "):
 					raise ConnectionError(response)
 				token = response.split(maxsplit=1)[1]
