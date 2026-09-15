@@ -5,7 +5,6 @@ import threading
 import random as rd
 
 class FrontendGUI(Tk):
-
     def __init__(self):
         #standard init shenanigans
         super().__init__()
@@ -179,7 +178,6 @@ class FrontendGUI(Tk):
         
         
     def contactList(self, contacts: list):
-
         """
         Displays a list of contacts as buttons. Clicking a button opens the chat with that contact.
         """
@@ -320,15 +318,6 @@ class FrontendGUI(Tk):
         """
         for i in messages:
             self.chatBubble(bubbleFrame, i) 
-    
-    
-    def buildChatBubbles(self, bubbleFrame, messages: list):
-        """
-        Builds chat bubbles for a list of messages.
-        messages: [[unread:bool, sender: str (mine/foreign), message: str], ...]
-        """
-        for i in messages:
-            self.chatBubble(bubbleFrame, i) 
         
         
     def getContacts(self, username = None):
@@ -428,20 +417,16 @@ class FrontendGUI(Tk):
         #placeholder for sending message to backend
         self.backend.send_message(message[0], message[1])
         self.chatLogs[message[0]].append([0, "mine", message[1]])  # Append sent message to the chat log
-        self.backend.send_message(message[0], message[1])
-        self.chatLogs[message[0]].append([0, "mine", message[1]])  # Append sent message to the chat log
         msg = " ".join(message)
         
         #print(f"Sending message: {msg}")
         #print(f"Sending message: {msg}")
-   
-   
+
+
     def run(self):
-        
-        
         self.mainloop()
         
-    
+
 chat = FrontendGUI()
 chat.loginScreen()  # Start with the login screen
 #chat.contactList(["Alice", "Bob", "Charlie"])

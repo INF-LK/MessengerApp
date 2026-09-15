@@ -2,9 +2,10 @@
 
 Die SQLite-Datenbank wird mit SQLCipher verschlüsselt. Vor dem Start des Backends muss ein geheimer Schlüssel als Umgebungsvariable gesetzt und die Abhängigkeit installiert werden:
 
+Kopiere die .env.example zu .env und trage den MESSENGER_DB_KEY ein
+
 ```bash
 pip install -r requirements.txt
-export MESSENGER_DB_KEY="ein-langes-geheimes-passwort"
 python Backend.py
 ```
 
