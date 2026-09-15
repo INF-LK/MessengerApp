@@ -2,37 +2,39 @@ from tkinter import Tk
 import tkinter as tk
 import Client
 import threading
+import random as rd
 
 class FrontendGUI(Tk):
-
     def __init__(self):
         #standard init shenanigans
         super().__init__()
         self.title("Infcord")
         self.geometry("1020x1019")
         self.resizable(False, False)
+        self.schemes = ["darkmode", "lightmode", "frosted", "trans", "pride"]
         self.colorscheme = "trans"
         self.setColorscheme(self.colorscheme)
         self.configure(bg=self.windowColor)
-        self.username = "Alice"
+        self.username = None
         #test feature, put into login function later:
-        self.initializeBackend(self.username)
+        #self.initializeBackend(self.username)
         self.chatLogs = None  # Initialize chatLogs to None
         self.currentContact = None 
         self.updateLoop()  # Start the update loop for receiving messages
+        self.passwordBoxes = None
 
 
-    def setColorscheme(self, scheme):
-        self.colorscheme = scheme
-        """
-        other color schemes except for frosted are not intended for actual use
-        """
+    def setColorscheme(self, scheme, lastcontact=None):
         schemes = ["darkmode","#000000","#000000","#000000","#000000","#000000","#000000",
            "lightmode","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff",
            "frosted","#29353c","#44576d","#768a96","#aac7d8","#dfebf6","#e6e6e6",
            "trans","#1fa6de","#df859a","#cbb3f7","#55cdfc","#f5a9b8","#ffffff",
            "pride", "#e50000", "#ff8c00", "#ffef00", "#00811f", "#0044ff", "#760089"
            ]
+        self.colorscheme = scheme
+        """
+        other color schemes except for frosted are not intended for actual use
+        """
         if scheme not in schemes:
             raise ValueError(f"Unknown colorscheme: {scheme}")
         idx = schemes.index(scheme)
@@ -44,20 +46,136 @@ class FrontendGUI(Tk):
         self.topBarColor = schemes[idx+4]
         self.bubbleColor = schemes[idx+5]
         self.spareColor = schemes[idx+6]
+
+        self.configure(bg=self.windowColor)
+        self.openMenu(lastcontact)
     
     
     
-    def initializeBackend(self, username):
+    def initializeBackend(self, username, password, mode):
         """
         Initializes the backend connection with the given username.
         """
-        self.backend = Client.MessengerClient(username)
+        self.backend = Client.MessengerClient(username, password)
+        print(self.backend, password)
         try:
-            self.backend.connect()
+            self.backend.connect(mode=mode)
         except OSError as e:
             raise ConnectionError(
                 f"Failed to connect to backend at {self.backend.host}:{self.backend.port}"
             ) from e
+        
+    def loginScreen(self, error = False):  
+        for i in self.winfo_children():
+            i.destroy()  
+        
+        
+        
+        loginFrame = tk.Frame(self, bg=self.windowColor)
+        loginFrame.pack(anchor="center", expand=True) 
+        
+        if error:
+            errorLabel = tk.Label(loginFrame, text="Incorrect Username or Password!", bg=self.windowColor,fg="black")
+            errorLabel.pack()
+        
+        usernameLabel = tk.Label(loginFrame, text="Username:", bg=self.windowColor,fg="black")
+        usernameLabel.pack(pady=5)
+        usernameEntry = tk.Entry(loginFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat")
+        usernameEntry.pack(pady=10)
+        passwordLabel = tk.Label(loginFrame, text="Password:", bg=self.windowColor,fg="black")
+        passwordLabel.pack(pady=5)
+        passwordEntry = tk.Entry(loginFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat", show="*")
+        passwordEntry.pack(pady=10)
+        
+        loginButton = tk.Button(loginFrame , text="Login", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda : self.attemptLogin(usernameEntry.get(), passwordEntry.get()))
+        loginButton.pack(pady=50)
+        
+        
+        registerLabel = tk.Label(loginFrame, text="Don't have an account?", bg=self.windowColor,fg="black")
+        registerLabel.pack(pady=10)
+        registerButton = tk.Button(loginFrame, text="Register", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.registerScreen())
+        registerButton.pack(pady=10)
+        
+    def attemptLogin(self, username, password):
+        print(username, password)
+        try:
+            self.initializeBackend(username, password, "LOGIN")
+            self.contactList(self.getContacts(username))
+            
+        except Exception as e:
+            print(e)
+            self.loginScreen(error=True)
+            
+    def registerScreen(self, error=False):
+        for i in self.winfo_children():
+            i.destroy()  
+        
+        self.passwordStrength = 0  # Initialize password strength variable
+          
+        registerFrame = tk.Frame(self, bg=self.windowColor)
+        registerFrame.pack(anchor="center", expand=True) 
+        
+        if error:
+            errorLabel = tk.Label(registerFrame, text="This account probably already exists, idk try logging in instead or smth", bg=self.windowColor,fg="black")
+            errorLabel.pack()
+        
+        usernameLabel = tk.Label(registerFrame, text="Username:", bg=self.windowColor,fg="black")
+        usernameLabel.pack(pady=5)
+        usernameEntry = tk.Entry(registerFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat")
+        usernameEntry.pack(pady=10)
+        passwordLabel = tk.Label(registerFrame, text="Password:", bg=self.windowColor,fg="black")
+        passwordLabel.pack(pady=5)
+        passwordEntry = tk.Entry(registerFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat", show="*")
+        passwordEntry.bind("<KeyRelease>", lambda event: self.updatePasswordStrength(passwordEntry.get(), passwordStrengthBar))
+        passwordEntry.pack(pady=10)
+        passwordStrengthLabel = tk.Label(registerFrame, text="Password Strength:", bg=self.windowColor,fg="black")
+        passwordStrengthLabel.pack(pady=5)
+        passwordStrengthBar = tk.Frame(registerFrame, width=240, height=20, bg=self.entryColor, borderwidth = -2,relief = "flat")
+        passwordStrengthBar.pack(pady=10)
+        passwordStrengthBar.pack_propagate(False)
+        #self.passwordStrengthLoop(passwordStrengthBar)  # Start the password strength update loop
+        
+        registerButton = tk.Button(registerFrame , text="Register", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.attemptRegister(usernameEntry.get(), passwordEntry.get()))
+        registerButton.pack(pady=50)
+        
+        backButton = tk.Button(registerFrame , text="Back", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.loginScreen())
+        backButton.pack(pady=10)
+        
+    def attemptRegister(self, username, password):
+        print(username, password)
+        try:
+            self.initializeBackend(username, password, "REGISTER")
+            self.contactList(self.getContacts(username))
+            
+        except Exception as e:
+            print(e)
+            self.registerScreen(error=True)
+        
+        
+    def updatePasswordStrength(self, password, bar):
+        self.passwordStrength = rd.randint(0, 10)  # actual password strength calculation
+        print(f"Password strength: {self.passwordStrength}")  # Debugging output
+        if self.passwordBoxes == None:
+            self.passwordBoxes = []
+            for i in range(10):
+                self.passwordBoxes.append(tk.Frame(bar, width=20, height=20, bg=self.entryColor, borderwidth=-2, relief="flat"))
+            
+        if bar != None:
+            for i in range(10):
+                self.passwordBoxes[i].configure(bg=self.entryColor)
+            for i in range(self.passwordStrength):
+                if i < 5:
+                    self.passwordBoxes[i].configure(bg="red")
+                elif i < 8:
+                    self.passwordBoxes[i].configure(bg="yellow")
+                else:
+                    self.passwordBoxes[i].configure(bg="green")
+            for box in self.passwordBoxes:
+
+                box.pack(side=tk.LEFT, padx=2)
+            self.update_idletasks()
+                
+        
         
     def contactList(self, contacts: list):
         """
@@ -65,9 +183,36 @@ class FrontendGUI(Tk):
         """
         for i in self.winfo_children():
             i.destroy()
-        for g in contacts:
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+
+        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
+        topBar.grid(row=0, column=0, sticky="ew")
+
+        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarLeft.grid(row=0, column=0, sticky="ew")
+
+        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarCenter.grid(row=0, column=1, sticky="ew")
+        
+        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarRight.grid(row=0, column=2, sticky="ew")
+
+        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu())
+        menuButton.pack(side=tk.RIGHT, padx=10, pady=10)
+
+        #i don't fully understand column weights but ai suggested i add this and it helps?
+        topBar.grid_columnconfigure(0, weight=1)
+        topBar.grid_columnconfigure(1, weight=2)
+        topBar.grid_columnconfigure(2, weight=1)
+
+        
+        self.grid_columnconfigure(0, weight=1)
+        for row, g in enumerate(contacts, start=1):
             button = tk.Button(self, text=g, bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda g=g:self.openChat(g))
-            button.pack(pady=10)
+            button.grid(row=row, column=0, sticky="w", pady=20, padx=20)
         
         self.currentContact = None  # Reset current contact when showing contact list
     
@@ -82,18 +227,25 @@ class FrontendGUI(Tk):
         
         #this is important to know what messages to fetch from the backend  
         self.currentContact = contact
+        
+        #this is important to know what messages to fetch from the backend  
+        self.currentContact = contact
             
         # top bar for buttons and contact name
+        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
         topBar = tk.Frame(self, height=50, bg=self.topBarColor)
         #topBar.pack(fill=tk.X)
         topBar.grid(row=0, column=0, sticky="ew")
 
         topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarLeft.grid(row=0, column=0, sticky="ew")
 
         topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarCenter.grid(row=0, column=1, sticky="ew")
         
+        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight.grid(row=0, column=2, sticky="ew")
 
@@ -104,11 +256,14 @@ class FrontendGUI(Tk):
 
         #buttons and contact name
         contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.contactList(self.getContacts()))
+        contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.contactList(self.getContacts()))
         contactButton.pack(side=tk.LEFT, padx=10, pady=10)
         
-        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu())
+        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu(self.currentContact))
+        menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu(self.currentContact))
         menuButton.pack(side=tk.RIGHT, padx=10, pady=10)
         
+        contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
         contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
         contactLabel.pack(fill=tk.X, anchor="center")
         
@@ -116,6 +271,7 @@ class FrontendGUI(Tk):
         #this is gonna be one hell of a ride o7
         
         #first a frame for the chat bubbles, i'll have to find out how to make it scrollable later
+        bubbleFrame = tk.Frame(self, bg=self.windowColor)
         bubbleFrame = tk.Frame(self, bg=self.windowColor)
         bubbleFrame.grid(row=1, column=0, sticky="nsew")
         
@@ -126,10 +282,14 @@ class FrontendGUI(Tk):
         
         #
         self.buildChatBubbles(bubbleFrame, self.getChatLog(contact))
+        #
+        self.buildChatBubbles(bubbleFrame, self.getChatLog(contact))
 
         # text field for sending chat messages
         bottomBar = tk.Frame(self, height=100, bg=self.topBarColor)
+        bottomBar = tk.Frame(self, height=100, bg=self.topBarColor)
         bottomBar.grid(row=2, column=0, sticky="ew")
+        entry = tk.Entry(bottomBar, width=100, bg=self.entryColor,fg="black", borderwidth = -2,relief = "flat")
         entry = tk.Entry(bottomBar, width=100, bg=self.entryColor,fg="black", borderwidth = -2,relief = "flat")
         entry.bind("<Return>", lambda event: self.sendMessage([contact, entry.get()]))
         entry.pack(anchor="center", pady=10)
@@ -144,7 +304,9 @@ class FrontendGUI(Tk):
         """
         unread, sender, msg = message
         bubble = tk.Frame(bubbleFrame, bg=self.bubbleColor, bd=2)#, relief="solid")
+        bubble = tk.Frame(bubbleFrame, bg=self.bubbleColor, bd=2)#, relief="solid")
         bubble.pack(pady=5, padx=10, anchor="w" if sender == "foreign" else "e")
+        label = tk.Label(bubble, text=msg, bg=self.bubbleColor,fg="black", wraplength=400)
         label = tk.Label(bubble, text=msg, bg=self.bubbleColor,fg="black", wraplength=400)
         label.pack(padx=10, pady=5)
     
@@ -158,7 +320,7 @@ class FrontendGUI(Tk):
             self.chatBubble(bubbleFrame, i) 
         
         
-    def getContacts(self):
+    def getContacts(self, username = None):
         #placeholder for getting contacts from backend
         return ["Alice", "Bob", "Charlie"]
         
@@ -202,14 +364,53 @@ class FrontendGUI(Tk):
             #self.update_idletasks()
         #except Exception as e:
             #print(f"Error in updateLoop: {e}")
-        self.after(2500, self.updateLoop)  # Check for new messages every second
-                
+        self.after(500, self.updateLoop)  # Check for new messages every second
+ 
     
-    
-    def openMenu(self):
-        #placeholder for opening menu
-        #self.updateLoop()
-        print("Menu opened")
+    def openMenu(self, lastcontact=None):
+        geometry = self.winfo_geometry().split("+")[0]
+        
+        for i in self.winfo_children():
+            i.destroy()
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+            
+        # top bar for buttons and contact name
+        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
+        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
+        topBar.grid(row=0, column=0, sticky="ew")
+
+        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarLeft.grid(row=0, column=0, sticky="ew")
+
+        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarCenter.grid(row=0, column=1, sticky="ew")
+        
+        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarRight.grid(row=0, column=2, sticky="ew")
+
+        #i don't fully understand column weights but ai suggested i add this and it helps?
+        topBar.grid_columnconfigure(0, weight=1)
+        topBar.grid_columnconfigure(1, weight=2)
+        topBar.grid_columnconfigure(2, weight=1)
+
+        contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openChat(lastcontact) if lastcontact else self.contactList(self.getContacts()))
+        contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openChat(lastcontact) if lastcontact else self.contactList(self.getContacts()))
+        contactButton.pack(side=tk.LEFT, padx=10, pady=10)
+
+        colorLabel = tk.Label(topBarCenter, text="Color Scheme", bg=self.labelColor,fg="black")
+        colorLabel.pack(fill=tk.BOTH, padx=10, pady=10)
+
+        self.grid_columnconfigure(0, weight=1)
+        for row, g in enumerate(self.schemes, start=1):
+            button = tk.Button(self, text=g, bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda g=g:self.setColorscheme(g, lastcontact))
+            button.grid(row=row, column=0, sticky="w", pady=20, padx=20)
+
     
     
     def sendMessage(self, message):
@@ -219,18 +420,14 @@ class FrontendGUI(Tk):
         msg = " ".join(message)
         
         #print(f"Sending message: {msg}")
-   
-   
+        #print(f"Sending message: {msg}")
+
+
     def run(self):
-        
         self.mainloop()
         
-    
+
 chat = FrontendGUI()
-chat.contactList(["Alice", "Bob", "Charlie"])
+chat.loginScreen()  # Start with the login screen
+#chat.contactList(["Alice", "Bob", "Charlie"])
 chat.run()
-
-
-
-
-

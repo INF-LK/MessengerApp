@@ -10,7 +10,7 @@ from pathlib import Path
 HOST = "127.0.0.1"
 PORT = 5000
 CERTFILE = Path(__file__).with_name("server.crt")
-SERVER_HOSTNAME = "INF-LK"
+SERVER_HOSTNAME = "localhost"
 
 
 def _hash_password(password):
@@ -37,7 +37,7 @@ class MessengerClient:
 		self.response_queue = queue.Queue()
 
 	def connect(self, mode="LOGIN", token=None):
-		try:
+		#try:
 			context = ssl.create_default_context(
 				ssl.Purpose.SERVER_AUTH,
 				cafile=str(self.ca_file),
@@ -83,9 +83,11 @@ class MessengerClient:
 				raise ConnectionError("Backend hat einen anderen Benutzer verbunden.")
 			self.username = fields[1]
 			self.token = fields[2]
-		except (ConnectionError, OSError, ValueError):
-			self.close()
-			raise
+			print("Probably connected")
+		#except (ConnectionError, OSError, ValueError):
+			#print("BIG error occured here!!")
+			#self.close()
+			#raise
 
 	def request(self, command):
 		self.send_command(command)
