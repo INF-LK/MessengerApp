@@ -6,7 +6,6 @@ import random as rd
 import time
 
 class FrontendGUI(Tk):
-
     def __init__(self):
         #standard init shenanigans
         super().__init__()
@@ -275,15 +274,19 @@ class FrontendGUI(Tk):
             
         # top bar for buttons and contact name
         topBar = tk.Frame(self, height=50, bg=self.topBarColor)
+        topBar = tk.Frame(self, height=50, bg=self.topBarColor)
         #topBar.pack(fill=tk.X)
         topBar.grid(row=0, column=0, sticky="ew")
 
         topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarLeft = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarLeft.grid(row=0, column=0, sticky="ew")
 
         topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
+        topBarCenter = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarCenter.grid(row=0, column=1, sticky="ew")
         
+        topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight.grid(row=0, column=2, sticky="ew")
 
@@ -294,11 +297,13 @@ class FrontendGUI(Tk):
 
         #buttons and contact name
         contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.contactList(self.getContacts()))
+        contactButton = tk.Button(topBarLeft, text="Back", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.contactList(self.getContacts()))
         contactButton.pack(side=tk.LEFT, padx=10, pady=10)
         
         menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu(self.currentContact))
         menuButton.pack(side=tk.RIGHT, padx=10, pady=10)
         
+        contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
         contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
         contactLabel.pack(fill=tk.X, anchor="center")
 
@@ -313,6 +318,7 @@ class FrontendGUI(Tk):
         #this is gonna be one hell of a ride o7
         
         #first a frame for the chat bubbles, i'll have to find out how to make it scrollable later
+        bubbleFrame = tk.Frame(self, bg=self.windowColor)
         bubbleFrame = tk.Frame(self, bg=self.windowColor)
         bubbleFrame.grid(row=1, column=0, sticky="nsew")
 
@@ -329,7 +335,9 @@ class FrontendGUI(Tk):
 
         # text field for sending chat messages
         bottomBar = tk.Frame(self, height=100, bg=self.topBarColor)
+        bottomBar = tk.Frame(self, height=100, bg=self.topBarColor)
         bottomBar.grid(row=2, column=0, sticky="ew")
+        entry = tk.Entry(bottomBar, width=100, bg=self.entryColor,fg="black", borderwidth = -2,relief = "flat")
         entry = tk.Entry(bottomBar, width=100, bg=self.entryColor,fg="black", borderwidth = -2,relief = "flat")
         entry.bind("<Return>", lambda event: self.sendMessage([contact, entry.get()]))
         entry.pack(anchor="center", pady=10)
@@ -344,7 +352,9 @@ class FrontendGUI(Tk):
         """
         unread, sender, msg = message
         bubble = tk.Frame(bubbleFrame, bg=self.bubbleColor, bd=2)#, relief="solid")
+        bubble = tk.Frame(bubbleFrame, bg=self.bubbleColor, bd=2)#, relief="solid")
         bubble.pack(pady=5, padx=10, anchor="w" if sender == "foreign" else "e")
+        label = tk.Label(bubble, text=msg, bg=self.bubbleColor,fg="black", wraplength=400)
         label = tk.Label(bubble, text=msg, bg=self.bubbleColor,fg="black", wraplength=400)
         label.pack(padx=10, pady=5)
     
@@ -469,8 +479,9 @@ class FrontendGUI(Tk):
         self.openChat(message[0])
         #print(f"Sending message: {msg}")
         #print(f"Sending message: {msg}")
-   
-   
+        #print(f"Sending message: {msg}")
+
+
     def run(self):
         
         
@@ -486,3 +497,7 @@ chat.run()
 
 
 
+chat = FrontendGUI()
+chat.loginScreen()  # Start with the login screen
+#chat.contactList(["Alice", "Bob", "Charlie"])
+chat.run()
