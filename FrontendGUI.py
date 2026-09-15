@@ -5,6 +5,7 @@ import threading
 import random as rd
 
 class FrontendGUI(Tk):
+
     def __init__(self):
         #standard init shenanigans
         super().__init__()
@@ -142,7 +143,7 @@ class FrontendGUI(Tk):
         backButton.pack(pady=10)
         
     def attemptRegister(self, username, password):
-        print(username, password)
+        #print(username, password)
         try:
             self.initializeBackend(username, password, "REGISTER")
             self.contactList(self.getContacts(username))
@@ -178,6 +179,7 @@ class FrontendGUI(Tk):
         
         
     def contactList(self, contacts: list):
+
         """
         Displays a list of contacts as buttons. Clicking a button opens the chat with that contact.
         """
@@ -200,6 +202,9 @@ class FrontendGUI(Tk):
         topBarRight = tk.Frame(topBar, height=50, bg=self.topBarColor)
         topBarRight.grid(row=0, column=2, sticky="ew")
 
+        addButton = tk.Button(topBarLeft, text="New Chat", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.addContact())
+        addButton.pack(side=tk.LEFT, padx=10, pady=10)
+
         menuButton = tk.Button(topBarRight, text="Menu", bg=self.buttonColor,fg="black", activebackground = self.buttonHoverColor, bd = 0, relief = "flat", command=lambda: self.openMenu())
         menuButton.pack(side=tk.RIGHT, padx=10, pady=10)
 
@@ -208,15 +213,50 @@ class FrontendGUI(Tk):
         topBar.grid_columnconfigure(1, weight=2)
         topBar.grid_columnconfigure(2, weight=1)
 
+        contactCanvas = tk.Canvas(self, bg=self.windowColor, highlightthickness=0, width =1020, height=969)
+        contactCanvas.grid(row=1, column=0, sticky="nsew")
+        scrollbar = tk.Scrollbar(self, orient="vertical", command=contactCanvas.yview)
+        scrollbar.grid(row=1, column=1, sticky="ns")
+        contactCanvas.configure(yscrollcommand=scrollbar.set)
+
+        contactFrame = tk.Frame(contactCanvas, bg=self.windowColor)
+        contactCanvas.create_window((0, 0), window=contactFrame, anchor="nw")
+
+        contactFrame.bind("<Configure>", lambda e: contactCanvas.configure(scrollregion=contactCanvas.bbox("all")))
         
         self.grid_columnconfigure(0, weight=1)
         for row, g in enumerate(contacts, start=1):
-            button = tk.Button(self, text=g, bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda g=g:self.openChat(g))
+            button = tk.Button(contactFrame, text=g, bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda g=g:self.openChat(g))
             button.grid(row=row, column=0, sticky="w", pady=20, padx=20)
         
         self.currentContact = None  # Reset current contact when showing contact list
     
-    def openChat(self, contact):
+    
+    
+    def addContact(self):
+        
+        for i in self.winfo_children():
+            i.destroy()
+        
+          
+        usernameFrame = tk.Frame(self, bg=self.windowColor)
+        usernameFrame.pack(anchor="center", expand=True) 
+        
+        
+        usernameLabel = tk.Label(usernameFrame, text="Username:", bg=self.windowColor,fg="black")
+        usernameLabel.pack(pady=5)
+        usernameEntry = tk.Entry(usernameFrame, width=30, bg=self.entryColor, borderwidth = -2,relief = "flat")
+        usernameEntry.pack(pady=10)
+
+        
+        openChatButton = tk.Button(usernameFrame , text="Open Chat", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.openChat(contact=usernameEntry.get(), newContact=True))
+        openChatButton.pack(pady=50)
+        
+        backButton = tk.Button(usernameFrame , text="Back", bg=self.buttonColor,fg="black", activebackground=self.buttonHoverColor, borderwidth = -2,relief = "flat", command=lambda: self.contactList())
+        backButton.pack(pady=10)
+            
+            
+    def openChat(self, contact, newContact=False):
         """
         Opens the chat window for the selected contact. 
         """
@@ -266,6 +306,13 @@ class FrontendGUI(Tk):
         contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
         contactLabel = tk.Label(topBarCenter, text=f"Chat with {contact}", bg=self.labelColor,fg="black")
         contactLabel.pack(fill=tk.X, anchor="center")
+
+        chatCanvas = tk.Canvas(self, bg=self.windowColor, highlightthickness=0, width =1020, height=969)
+        chatCanvas.grid(row=1, column=0, sticky="nsew")
+        scrollbar = tk.Scrollbar(self, orient="vertical", command=chatCanvas.yview)
+        scrollbar.grid(row=1, column=1, sticky="ns")
+        chatCanvas.configure(yscrollcommand=scrollbar.set)
+
         
         #chat Bubbles 
         #this is gonna be one hell of a ride o7
@@ -274,6 +321,8 @@ class FrontendGUI(Tk):
         bubbleFrame = tk.Frame(self, bg=self.windowColor)
         bubbleFrame = tk.Frame(self, bg=self.windowColor)
         bubbleFrame.grid(row=1, column=0, sticky="nsew")
+
+        bubbleFrame.bind("<Configure>", lambda e: chatCanvas.configure(scrollregion=chatCanvas.bbox("all")))
         
         #this makes sure the bubbleFrame fills up the window without pushing the top and bottom bars out of the way.. i think?
         #i just played around with weights until it worked 
@@ -318,23 +367,37 @@ class FrontendGUI(Tk):
         """
         for i in messages:
             self.chatBubble(bubbleFrame, i) 
+    
+    
+    def buildChatBubbles(self, bubbleFrame, messages: list):
+        """
+        Builds chat bubbles for a list of messages.
+        messages: [[unread:bool, sender: str (mine/foreign), message: str], ...]
+        """
+        for i in messages:
+            self.chatBubble(bubbleFrame, i) 
         
         
     def getContacts(self, username = None):
         #placeholder for getting contacts from backend
-        return ["Alice", "Bob", "Charlie"]
+        return ["Alice", "Bob", "Charlie","David", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Judy", "Mallory", "Niaj", "Olivia", "Peggy", "Rupert", "Sybil", "Trent", "Victor", "Walter", "Xavier", "Yvonne", "Zara"]
         
         
-    def getChatLog(self, contact):
+    def getChatLog(self, contact, test=True):
         #placeholder for getting messages from backend
         #format: [[unread:bool, sender: str (mine/foreign), message: str], ...]
-        if self.chatLogs == None:
-            self.chatLogs = {
-                "Alice": [[0, "mine", "Hello!"], [0, "foreign", "Hi there!"], [0, "mine", "How are you?"], [1, "foreign", "I'm good, thanks!"]],
-                "Bob": [[0, "mine", "Hey Bob!"], [1, "foreign", "Hey!"], [0, "mine", "What's up?"], [0, "foreign", "Not much, you?"]],
-                "Charlie": [[0, "mine", "Hey Charlie!"], [0, "foreign", "Hey!"], [0, "mine", "How's it going?"], [1, "foreign", "Good, you?"]]
-            }
-        return self.chatLogs.get(contact)
+        if test:
+            if self.chatLogs == None:
+                self.chatLogs = {
+                    "Alice": [[0, "mine", "Hello!"], [0, "foreign", "Hi there!"], [0, "mine", "How are you?"], [1, "foreign", "I'm good, thanks!"]],
+                    "Bob": [[0, "mine", "Hey Bob!"], [1, "foreign", "Hey!"], [0, "mine", "What's up?"], [0, "foreign", "Not much, you?"]],
+                    "Charlie": [[0, "mine", "Hey Charlie!"], [0, "foreign", "Hey!"], [0, "mine", "How's it going?"], [1, "foreign", "Good, you?"]]
+                }
+                
+        else:
+            self.backend.request("CHATS")
+            
+        return self.chatLogs.get(contact) if self.chatLogs.get(contact) != None else []
     
     
     def updateChatLog(self, contact):
@@ -416,18 +479,28 @@ class FrontendGUI(Tk):
     def sendMessage(self, message):
         #placeholder for sending message to backend
         self.backend.send_message(message[0], message[1])
-        self.chatLogs[message[0]].append([0, "mine", message[1]])  # Append sent message to the chat log
+        try:
+            self.chatLogs[message[0]].append([0, "mine", message[1]])  # Append sent message to the chat log
+        except:
+            self.chatLogs[message[0]] = [[0, "mine", message[1]]]
         msg = " ".join(message)
         
         #print(f"Sending message: {msg}")
         #print(f"Sending message: {msg}")
-
-
+   
+   
     def run(self):
+        
+        
         self.mainloop()
         
-
+    
 chat = FrontendGUI()
 chat.loginScreen()  # Start with the login screen
 #chat.contactList(["Alice", "Bob", "Charlie"])
 chat.run()
+
+
+
+
+
