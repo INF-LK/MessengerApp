@@ -391,9 +391,12 @@ class FrontendGUI(Tk):
         #format: [[unread:bool, sender: str (mine/foreign), message: str], ...]
         contactLogs = []
 
-        for i in self.backend.load_messages()[contact]:
-            contactLogs.append([1, "foreign" if i["sender"] == contact else "mine", i["nachricht"]])
-        print(self.chatLogs)
+        messages = self.backend.load_messages()
+        
+        if contact in messages:
+            for i in messages[contact]:
+                contactLogs.append([1, "foreign" if i["sender"] == contact else "mine", i["nachricht"]])
+            print(self.chatLogs)
             
         #return self.chatLogs.get(contact) if self.chatLogs.get(contact) != None else []
         return contactLogs
