@@ -101,7 +101,7 @@ class FrontendGUI(Tk):
         print(username, password)
         try:
             self.initializeBackend(username, password, "LOGIN")
-            self.contactList(self.getContacts(username, login=True))
+            self.contactList(self.getContacts(username, login=True), login=True)
             
         except Exception as e:
             print(e)
@@ -384,19 +384,23 @@ class FrontendGUI(Tk):
         if login:
             time.sleep(1)
             
-        return self.backend.load_chats()
+        return self.backend.request("CHATS")
         
-    def getChatLog(self, contact, test=False):
+    def getChatLog(self, contact, test=True):
         #placeholder for getting messages from backend
         #format: [[unread:bool, sender: str (mine/foreign), message: str], ...]
-        contactLogs = []
-
-        for i in self.backend.load_messages()[contact]:
-            contactLogs.append([1, "foreign" if i["sender"] == contact else "mine", i["nachricht"]])
-        print(self.chatLogs)
+        if test:
+            if self.chatLogs == None:
+                self.chatLogs = {
+                    "Alice": [[0, "mine", "Hello!"], [0, "foreign", "Hi there!"], [0, "mine", "How are you?"], [1, "foreign", "I'm good, thanks!"]],
+                    "Bob": [[0, "mine", "Hey Bob!"], [1, "foreign", "Hey!"], [0, "mine", "What's up?"], [0, "foreign", "Not much, you?"]],
+                    "Charlie": [[0, "mine", "Hey Charlie!"], [0, "foreign", "Hey!"], [0, "mine", "How's it going?"], [1, "foreign", "Good, you?"]]
+                }
+                
+        else:
+            self.backend.request("MESSAGES")
             
-        #return self.chatLogs.get(contact) if self.chatLogs.get(contact) != None else []
-        return contactLogs
+        return self.chatLogs.get(contact) if self.chatLogs.get(contact) != None else []
     
     
     def updateChatLog(self, contact):
@@ -471,13 +475,12 @@ class FrontendGUI(Tk):
     def sendMessage(self, message):
         #placeholder for sending message to backend
         self.backend.send_message(message[0], message[1])
-        # try:
-        #     self.chatLogs[message[0]].append([0, "mine", message[1]])  # Append sent message to the chat log
-        # except:
-        #     self.chatLogs[message[0]] = [[0, "mine", message[1]]]
+        try:
+            self.chatLogs[message[0]].append([0, "mine", message[1]])  # Append sent message to the chat log
+        except:
+            self.chatLogs[message[0]] = [[0, "mine", message[1]]]
         #msg = " ".join(message)
         self.openChat(message[0])
-        #print(f"Sending message: {msg}")
         #print(f"Sending message: {msg}")
         #print(f"Sending message: {msg}")
 
